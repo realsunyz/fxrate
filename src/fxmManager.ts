@@ -7,6 +7,41 @@ import { round, multiply, Fraction } from 'mathjs';
 
 import process from 'node:process';
 
+const parsePrecisionValue = (value?: string | null): number | undefined => {
+    if (value == null || value.trim() === '') return undefined;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return undefined;
+    if (parsed === -1) return -1;
+    return Math.max(0, Math.trunc(parsed));
+};
+
+const DEFAULT_PRECISION = 2;
+
+const toNumeric = (value: number | Fraction): number | undefined => {
+    if (typeof value === 'number') return value;
+    if (typeof (value as Fraction).valueOf === 'function') {
+        const numeric = Number((value as Fraction).valueOf());
+        if (Number.isFinite(numeric)) return numeric;
+    }
+    const numeric = Number(value.toString());
+    return Number.isFinite(numeric) ? numeric : undefined;
+};
+
+const formatWithPrecision = (
+    value: number | Fraction,
+    precision: number,
+): string => {
+    const numeric = toNumeric(value);
+    if (numeric === undefined) return value.toString();
+    return numeric.toFixed(Math.max(0, precision));
+};
+
+const resolvePrecision = (request: request<any>): number => {
+    const queryPrecision = parsePrecisionValue(request.query.get('precision'));
+    if (queryPrecision !== undefined) return queryPrecision;
+    return DEFAULT_PRECISION;
+};
+
 export const useBasic = (response: response<any>): void => {
     response.status = 200;
     response.headers.set('Date', new Date().toUTCString());
@@ -127,11 +162,18 @@ const getConvert = async (
         answer,
         1 + (Number(request.query.get('fees')) || fees) / 100,
     ) as Fraction;
-    answer =
-        Number(request.query.get('precision')) !== -1
-            ? round(answer, Number(request.query.get('precision')) || 5)
-            : answer;
-    return Number(answer.toString()) || answer.toString();
+
+    const precision = resolvePrecision(request);
+    if (precision !== -1) {
+        answer = round(answer, precision);
+    }
+
+    if (precision === -1) {
+        const numeric = toNumeric(answer);
+        return numeric !== undefined ? numeric : answer.toString();
+    }
+
+    return formatWithPrecision(answer, precision);
 };
 
 const getDetails = async (

@@ -84,9 +84,9 @@ interface InfoResponse {
 
 ```typescript
 interface FXRate {
-    cash: number;
-    remit: number | false;
-    middle: number;
+    cash: string | false;
+    remit: string | false;
+    middle: string | false;
     provided: boolean;
     updated: UTCString;
     error: string;
@@ -108,7 +108,7 @@ Optional query parameters:
 
 - `amount` (number): Convert a specific amount (defaults to 100).
 - `reverse` (boolean): Interpret the query as "how much of `:from` is required to obtain the amount of `:to`."
-- `precision` (number): Control decimal places; use `-1` to return recurring decimals.
+- `precision` (number): Control decimal places (defaults to `2` if unset); use `-1` to return recurring decimals.
 - `fees` (number): Apply a percentage handling fee for card transactions.
 
 ### Authentication Endpoints
