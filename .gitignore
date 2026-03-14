@@ -179,5 +179,6 @@ out
 .vercel
 
 dist/*
-!dist/readme.md
 !dist/index.cjs
+
+.pnpm-store
