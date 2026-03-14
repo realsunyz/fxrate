@@ -1,0 +1,7 @@
+*
+!Dockerfile
+!package.json
+!pnpm-lock.yaml
+!pm2.json
+!dist/
+!dist/**
