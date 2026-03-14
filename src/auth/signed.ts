@@ -1,5 +1,5 @@
 import axios from "axios";
-import { handler } from "handlers.js";
+import { handler } from "../vendor/handlers";
 import process from "node:process";
 
 import { CAPTCHA_ENABLED, createSession, createSessionCookie } from "./session";

@@ -1,4 +1,4 @@
-import { router, response, request, handler, interfaces } from "handlers.js";
+import { router, response, request, handler, interfaces } from "./vendor/handlers";
 import fxManager from "./fxm/fxManager";
 import { FXRate, currency } from "src/types";
 import { supportedCurrenciesList } from "./constant";

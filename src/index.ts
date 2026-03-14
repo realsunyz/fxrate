@@ -2,7 +2,7 @@ import process from "node:process";
 import http from "node:http";
 import path from "node:path";
 
-import rootRouter, { handler } from "handlers.js";
+import rootRouter, { handler } from "./vendor/handlers";
 
 import fxmManager from "./fxmManager";
 import { useBasic } from "./fxmManager";
