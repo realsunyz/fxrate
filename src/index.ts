@@ -18,6 +18,7 @@ import {
     getSessionWithReason,
     parseCookies,
 } from './auth/session';
+import { hasInternalAuthBypass } from './auth/internal';
 
 import getBOCFXRatesFromBOC from './FXGetter/boc';
 // import getBOCHKFxRates from './FXGetter/bochk';
@@ -187,8 +188,7 @@ export const makeInstance = async (App: rootRouter, Manager: fxmManager) => {
                         return;
                     }
 
-                    const qToken = request.query.get('token');
-                    if (qToken === '__internal__') {
+                    if (hasInternalAuthBypass(request)) {
                         status.success = true;
                         status.internal = true;
                         custom.captcha = status;

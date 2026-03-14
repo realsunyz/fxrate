@@ -6,6 +6,7 @@ import { supportedCurrenciesList } from './constant';
 import { round, multiply, Fraction } from 'mathjs';
 
 import process from 'node:process';
+import { markInternalAuthBypass } from './auth/internal';
 
 const parsePrecisionValue = (value?: string | null): number | undefined => {
     if (value == null || value.trim() === '') return undefined;
@@ -65,8 +66,6 @@ export const useBasic = (response: response<any>): void => {
 
 export const useInternalRestAPI = async (url: string, router: router) => {
     const u = new URL(`http://this.internal/${url}`);
-    if (!u.searchParams.has('token'))
-        u.searchParams.set('token', '__internal__');
 
     const req = new request(
         'GET',
@@ -74,7 +73,8 @@ export const useInternalRestAPI = async (url: string, router: router) => {
         new interfaces.headers({}),
         '',
         {},
-    ).extends({ turnstile: { success: true } });
+    );
+    markInternalAuthBypass(req);
 
     const restResponse = await router.respond(req).catch((e) => e);
 
@@ -419,7 +419,6 @@ class fxmManager extends router {
             request: request<any>,
             response: response<any>,
         ) => {
-            await maybeRefresh(request);
             if (!isTurnstileValid(request)) {
                 response.status = 403;
                 response.body = JSON.stringify({
@@ -437,6 +436,7 @@ class fxmManager extends router {
                 useCache(response);
                 throw response;
             }
+            await maybeRefresh(request);
             if (request.params[0] && request.params[0] != source) {
                 return response;
             }
@@ -459,7 +459,6 @@ class fxmManager extends router {
             request: request<any>,
             response: response<any>,
         ) => {
-            await maybeRefresh(request);
             if (!isTurnstileValid(request)) {
                 response.status = 403;
                 response.body = JSON.stringify({
@@ -477,6 +476,7 @@ class fxmManager extends router {
                 useCache(response);
                 return response;
             }
+            await maybeRefresh(request);
             if (request.params.from)
                 request.params.from = request.params.from.toUpperCase();
 
@@ -519,7 +519,6 @@ class fxmManager extends router {
             request: request<any>,
             response: response<any>,
         ) => {
-            await maybeRefresh(request);
             if (request.params.from)
                 request.params.from = request.params.from.toUpperCase();
 
@@ -530,6 +529,7 @@ class fxmManager extends router {
             if (!isTurnstileValid(request)) {
                 return invalidTokenPairResponse(from, to, request, response);
             }
+            await maybeRefresh(request);
             const result = await getDetails(
                 from as unknown as currency,
                 to as unknown as currency,
@@ -568,7 +568,6 @@ class fxmManager extends router {
             request: request<any>,
             response: response<any>,
         ) => {
-            await maybeRefresh(request);
             if (request.params.from)
                 request.params.from = request.params.from.toUpperCase();
 
@@ -579,6 +578,7 @@ class fxmManager extends router {
             if (!isTurnstileValid(request)) {
                 return invalidTokenPairResponse(from, to, request, response);
             }
+            await maybeRefresh(request);
             const details: any = {};
             try {
                 details.cash = await getConvert(
