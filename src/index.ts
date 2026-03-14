@@ -7,7 +7,6 @@ import rootRouter, { handler } from 'handlers.js';
 import fxmManager from './fxmManager';
 import { useBasic } from './fxmManager';
 import { createTurnstileHandler } from './auth/signed';
-import createSignedApiHandler from './auth/apiSigned';
 import {
     CAPTCHA_ENABLED,
     SESSION_COOKIE_NAME,
@@ -228,7 +227,6 @@ export const makeInstance = async (App: rootRouter, Manager: fxmManager) => {
     );
 
     App.binding('/auth/turnstile', createTurnstileHandler());
-    App.binding('/api/signed', createSignedApiHandler());
 
     App.binding(
         '/auth/logout',

@@ -41,15 +41,12 @@ docker pull sjc.vultrcr.com/seven/fxrate:latest
 | ------------------------- | ---------------------------------- | ---------------------------- |
 | `PORT`                    | `8080`                             | Listening Port               |
 | `TURNSTILE_SECRET`        | —                                  | Turnstile Site Secret        |
-| `AUTH_SIGNED_RS256_KEY`   | —                                  | RS256 Public Key (`kid:PEM`) |
-| `AUTH_SIGNED_MAX_SKEW`    | `300`                              | Allowed Clock Skew (seconds) |
-| `AUTH_SIGNED_MAX_TTL`     | `600`                              | Max Token Lifetime (seconds) |
 | `SESSION_SIGNING_SECRET`  | `TURNSTILE_SECRET`                 | HMAC Secret for Stateless Session Cookie |
 | `SESSION_TTL_SECONDS`     | `300`                              | Session Lifetime (seconds)   |
 | `CORS_ORIGIN`             | `*`                                | Allowed CORS Origin          |
 
 - Turnstile protection is enabled automatically when `TURNSTILE_SECRET` is set; leaving it empty disables captcha checks.
-- Session cookies are stateless and HMAC-signed, so the server does not keep session state in memory. Set `SESSION_SIGNING_SECRET` explicitly if you use `/api/signed` without `TURNSTILE_SECRET`.
+- Session cookies are stateless and HMAC-signed, so the server does not keep session state in memory. Set `SESSION_SIGNING_SECRET` explicitly if you do not want to reuse `TURNSTILE_SECRET`.
 
 ## Usage
 
@@ -104,17 +101,17 @@ Optional query parameters:
 
 ### Authentication Endpoints
 
-- `POST /v1/auth/signed` - Verify a Turnstile token and issue a session cookie.
+- `POST /auth/turnstile` - Verify a Turnstile token and issue a session cookie.
 
-Query parameter: `cf_token` or `token` (equivalent).
+Query parameter: `turnstile-token` or `token` (equivalent).
 
 ```bash
-POST /auth/signed HTTP/1.1
+POST /auth/turnstile HTTP/1.1
 Host: api.example.com
 Content-Type: application/json
 
 {
-  "token": "xxxx-xxxx-xxxx"
+  "turnstile-token": "xxxx-xxxx-xxxx"
 }
 ```
 
