@@ -1,7 +1,6 @@
 import process from 'node:process';
 import http from 'node:http';
-
-import esMain from 'es-main';
+import path from 'node:path';
 
 import rootRouter, { handler } from 'handlers.js';
 
@@ -264,9 +263,23 @@ export const makeInstance = async (App: rootRouter, Manager: fxmManager) => {
     return App;
 };
 
+const isDirectExecution = (() => {
+    const entry = process.argv[1];
+
+    if (!entry) return false;
+
+    const resolvedEntry = path.resolve(entry);
+
+    return (
+        resolvedEntry.endsWith(`${path.sep}src${path.sep}index.ts`) ||
+        (typeof __filename !== 'undefined' && resolvedEntry === __filename)
+    );
+})();
+
 if (
     process.env.VERCEL == '1' ||
-    ((_) => globalThis.esBuilt ?? esMain(_))(import.meta)
+    globalThis.esBuilt === true ||
+    isDirectExecution
 ) {
     (async () => {
         globalThis.App = await makeInstance(new rootRouter(), Manager);
