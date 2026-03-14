@@ -1,6 +1,6 @@
 FROM node:alpine
-COPY package.json ./
-RUN yarn global add pnpm pm2 husky && pnpm install -P
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && npm install -g pm2 && pnpm install --prod --frozen-lockfile
 
 WORKDIR /app
 
