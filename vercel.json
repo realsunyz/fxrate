@@ -1,18 +1,18 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "/dist/index.cjs",
-            "use": "@vercel/node",
-            "config": { "includeFiles": ["dist/**"] }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "/dist/index.cjs"
-        }
-    ],
-    "buildCommand": "pnpm build",
-    "installCommand": "pnpm install --frozen-lockfile"
+  "version": 2,
+  "builds": [
+    {
+      "src": "/dist/index.cjs",
+      "use": "@vercel/node",
+      "config": { "includeFiles": ["dist/**"] }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/dist/index.cjs"
+    }
+  ],
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install --frozen-lockfile"
 }

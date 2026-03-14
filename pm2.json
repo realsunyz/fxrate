@@ -1,5 +1,5 @@
 {
-    "name": "fxrate",
-    "script": "dist/index.cjs",
-    "instances": "1"
+  "name": "fxrate",
+  "script": "dist/index.cjs",
+  "instances": "1"
 }

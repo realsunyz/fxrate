@@ -1,53 +1,53 @@
-import axios from 'axios';
+import axios from "axios";
 
-import { currency, FXRate } from 'src/types';
+import { currency, FXRate } from "src/types";
 
 const getHSBCAUFXRates = async (): Promise<FXRate[]> => {
-    const req = await axios.get(
-        `https://mkdlc.ebanking.hsbc.com.hk/hsbcfxwidget/data/getFXList?callback=JSON.stringify&token=0vg8cORxRLBsrWg9C9UboMT%2BkN2Ykze6vFnRV1nA8DE%3D`,
-        {
-            headers: {
-                'User-Agent':
-                    process.env['HEADER_USER_AGENT'] ??
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.3405.119',
-            },
+  const req = await axios.get(
+    `https://mkdlc.ebanking.hsbc.com.hk/hsbcfxwidget/data/getFXList?callback=JSON.stringify&token=0vg8cORxRLBsrWg9C9UboMT%2BkN2Ykze6vFnRV1nA8DE%3D`,
+    {
+      headers: {
+        "User-Agent":
+          process.env["HEADER_USER_AGENT"] ??
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.3405.119",
+      },
+    },
+  );
+
+  const data = JSON.parse([eval][0](req.data)).data;
+
+  const date = new Date(req.headers["date"]);
+
+  const answer: FXRate[] = data.fxList.map((k) => {
+    return {
+      currency: {
+        from: "AUD" as currency.AUD,
+        to: k.curr_s as currency.unknown,
+      },
+      rate: {
+        sell: {
+          cash: k.buy,
+          remit: k.buy,
         },
-    );
+        buy: {
+          cash: k.sell,
+          remit: k.sell,
+        },
+      },
+      unit: 1,
+      updated: date,
+    } as FXRate;
+  });
 
-    const data = JSON.parse([eval][0](req.data)).data;
+  answer.push(
+    ((answer) => {
+      const tmp = answer.find((k) => k.currency.to === "CNY");
+      tmp.currency.to = "CNH" as currency.CNH;
+      return tmp;
+    })(answer),
+  );
 
-    const date = new Date(req.headers['date']);
-
-    const answer: FXRate[] = data.fxList.map((k) => {
-        return {
-            currency: {
-                from: 'AUD' as currency.AUD,
-                to: k.curr_s as currency.unknown,
-            },
-            rate: {
-                sell: {
-                    cash: k.buy,
-                    remit: k.buy,
-                },
-                buy: {
-                    cash: k.sell,
-                    remit: k.sell,
-                },
-            },
-            unit: 1,
-            updated: date,
-        } as FXRate;
-    });
-
-    answer.push(
-        ((answer) => {
-            const tmp = answer.find((k) => k.currency.to === 'CNY');
-            tmp.currency.to = 'CNH' as currency.CNH;
-            return tmp;
-        })(answer),
-    );
-
-    return answer;
+  return answer;
 };
 
 export default getHSBCAUFXRates;

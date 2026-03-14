@@ -1,27 +1,27 @@
 {
-    "compilerOptions": {
-        "module": "ESNext",
-        "declaration": true,
-        "removeComments": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "allowSyntheticDefaultImports": true,
-        "target": "ES2021",
-        "sourceMap": true,
-        "outDir": "./dist",
-        "baseUrl": ".",
-        "incremental": true,
-        "skipLibCheck": true,
-        "moduleResolution": "node",
-        "resolveJsonModule": true
-    },
-    "exclude": ["dist", "node_modules"],
-    "include": ["src/**/*", "tests/**/*"],
-    "ts-node": {
-        "esm": true
-    },
-    "tsc-alias": {
-        "resolveFullPaths": true,
-        "verbose": true
-    }
+  "compilerOptions": {
+    "module": "ESNext",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "incremental": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true
+  },
+  "exclude": ["dist", "node_modules"],
+  "include": ["src/**/*", "tests/**/*"],
+  "ts-node": {
+    "esm": true
+  },
+  "tsc-alias": {
+    "resolveFullPaths": true,
+    "verbose": true
+  }
 }

@@ -37,13 +37,13 @@ docker pull sjc.vultrcr.com/seven/fxrate:latest
 > [!IMPORTANT]
 > Always deploy behind HTTPS and enable captcha in production to prevent potential attacks and unauthorized queries.
 
-| Variable                  | Default                            | Description                  |
-| ------------------------- | ---------------------------------- | ---------------------------- |
-| `PORT`                    | `8080`                             | Listening Port               |
-| `TURNSTILE_SECRET`        | —                                  | Turnstile Site Secret        |
-| `SESSION_SIGNING_SECRET`  | `TURNSTILE_SECRET`                 | HMAC Secret for Stateless Session Cookie |
-| `SESSION_TTL_SECONDS`     | `300`                              | Session Lifetime (seconds)   |
-| `CORS_ORIGIN`             | `*`                                | Allowed CORS Origin          |
+| Variable                 | Default            | Description                              |
+| ------------------------ | ------------------ | ---------------------------------------- |
+| `PORT`                   | `8080`             | Listening Port                           |
+| `TURNSTILE_SECRET`       | —                  | Turnstile Site Secret                    |
+| `SESSION_SIGNING_SECRET` | `TURNSTILE_SECRET` | HMAC Secret for Stateless Session Cookie |
+| `SESSION_TTL_SECONDS`    | `300`              | Session Lifetime (seconds)               |
+| `CORS_ORIGIN`            | `*`                | Allowed CORS Origin                      |
 
 - Turnstile protection is enabled automatically when `TURNSTILE_SECRET` is set; leaving it empty disables captcha checks.
 - Session cookies are stateless and HMAC-signed, so the server does not keep session state in memory. Set `SESSION_SIGNING_SECRET` explicitly if you do not want to reuse `TURNSTILE_SECRET`.
@@ -60,11 +60,11 @@ This endpoint is always publicly accessible and does not require authentication,
 
 ```typescript
 interface InfoResponse {
-    apiVersion: 'v1';
-    environment: 'production' | 'development';
-    sources: string[];
-    status: 'ok';
-    version: string;
+  apiVersion: "v1";
+  environment: "production" | "development";
+  sources: string[];
+  status: "ok";
+  version: string;
 }
 ```
 
@@ -72,13 +72,13 @@ interface InfoResponse {
 
 ```typescript
 interface FXRate {
-    cash: string | false;
-    remit: string | false;
-    middle: string | false;
-    provided: boolean;
-    updated: UTCString;
-    error: string;
-    success: boolean;
+  cash: string | false;
+  remit: string | false;
+  middle: string | false;
+  provided: boolean;
+  updated: UTCString;
+  error: string;
+  success: boolean;
 }
 ```
 
@@ -86,9 +86,9 @@ interface FXRate {
 
 ```typescript
 interface FXRateList {
-    [currencyCode: string]: FXRate | string | boolean;
-    error: string;
-    success: boolean;
+  [currencyCode: string]: FXRate | string | boolean;
+  error: string;
+  success: boolean;
 }
 ```
 
