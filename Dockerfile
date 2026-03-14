@@ -1,8 +1,8 @@
-FROM node:alpine
-COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && npm install -g pm2 && pnpm install --prod --frozen-lockfile
-
+FROM node:24-alpine
 WORKDIR /app
+
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm@latest pm2 && pnpm install --prod --frozen-lockfile
 
 COPY pm2.json ./
 COPY dist ./dist

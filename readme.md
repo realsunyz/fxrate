@@ -16,7 +16,7 @@ A TypeScript service that aggregates foreign-exchange rates from Chinese banks a
 
 ### Prerequisites
 
-- Node.js 18 or later
+- Node.js 24 or later
 - pnpm
 
 ### Local Development
