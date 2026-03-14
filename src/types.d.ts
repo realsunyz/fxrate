@@ -52,7 +52,7 @@ export enum currency {
     AUX = 'AUX', // Gold 995
     AUY = 'AUY', // Gold 999
     BND = 'BND',
-    unknown,
+    unknown = 'unknown',
 }
 
 export interface FXRate {
