@@ -6,15 +6,12 @@ import rootRouter, { handler } from 'handlers.js';
 
 import fxmManager from './fxmManager';
 import { useBasic } from './fxmManager';
-import { createRecaptchaHandler, createTurnstileHandler } from './auth/signed';
+import { createTurnstileHandler } from './auth/signed';
 import createSignedApiHandler from './auth/apiSigned';
 import {
     CAPTCHA_ENABLED,
-    CAPTCHA_PROVIDER,
-    SESSION_COOKIE_DOMAIN,
     SESSION_COOKIE_NAME,
-    SESSION_COOKIE_SAMESITE,
-    SESSION_COOKIE_SECURE,
+    createExpiredSessionCookie,
     getSessionWithReason,
     parseCookies,
 } from './auth/session';
@@ -170,14 +167,7 @@ export const makeInstance = async (App: rootRouter, Manager: fxmManager) => {
                 try {
                     const custom = (request as any).custom || {};
                     (request as any).custom = custom;
-                    const status: Record<string, any> = {
-                        provider: CAPTCHA_PROVIDER,
-                    };
-
-                    response.headers.set(
-                        'X-Captcha-Provider',
-                        CAPTCHA_PROVIDER,
-                    );
+                    const status: Record<string, any> = {};
 
                     if (!CAPTCHA_ENABLED) {
                         status.success = true;
@@ -212,16 +202,22 @@ export const makeInstance = async (App: rootRouter, Manager: fxmManager) => {
                         response.headers.set('X-Session', 'valid');
                     } else {
                         status.success = false;
-                        status.error =
-                            reason === 'expired'
-                                ? 'token expired'
-                                : 'token invalid';
+                        status.error = (() => {
+                            if (reason === 'expired') return 'token expired';
+                            if (reason === 'misconfigured')
+                                return 'server misconfigured';
+                            return 'token invalid';
+                        })();
                         if (reason) status.reason = reason;
                         custom.captcha = status;
                         custom.turnstile = status;
                         response.headers.set(
                             'X-Session',
-                            reason === 'expired' ? 'expired' : 'missing',
+                            reason === 'expired'
+                                ? 'expired'
+                                : reason === 'misconfigured'
+                                  ? 'misconfigured'
+                                  : 'missing',
                         );
                     }
                 } catch (_e) {
@@ -232,24 +228,16 @@ export const makeInstance = async (App: rootRouter, Manager: fxmManager) => {
     );
 
     App.binding('/auth/turnstile', createTurnstileHandler());
-    App.binding('/auth/recaptcha', createRecaptchaHandler());
     App.binding('/api/signed', createSignedApiHandler());
 
     App.binding(
         '/auth/logout',
         new handler('POST', [
             async (_request, response) => {
-                const attrs = [
-                    `${SESSION_COOKIE_NAME}=`,
-                    'Max-Age=0',
-                    'HttpOnly',
-                    `SameSite=${SESSION_COOKIE_SAMESITE}`,
-                    'Path=/',
-                ];
-                if (SESSION_COOKIE_SECURE) attrs.push('Secure');
-                if (SESSION_COOKIE_DOMAIN)
-                    attrs.push(`Domain=${SESSION_COOKIE_DOMAIN}`);
-                response.headers.set('Set-Cookie', attrs.join('; '));
+                response.headers.set(
+                    'Set-Cookie',
+                    createExpiredSessionCookie(),
+                );
                 response.status = 200;
                 response.body = JSON.stringify({ success: true });
                 return response;

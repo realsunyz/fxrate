@@ -9,7 +9,7 @@ A TypeScript service that aggregates foreign-exchange rates from Chinese banks a
 
 - Aggregates buy, sell, and mid rates from major Chinese banks and card networks.
 - Flexible query parameters for amount conversion, reverse lookup, precision control, and fee adjustments.
-- Built-in RS256 Signature, Cloudflare Turnstile, and Google reCaptcha validation and session management to protect public deployments.
+- Built-in RS256 Signature, Cloudflare Turnstile validation, and session management to protect public deployments.
 - Compatible with Docker and serverless platforms (e.g. Vercel).
 
 ## Quick Start
@@ -40,25 +40,16 @@ docker pull sjc.vultrcr.com/seven/fxrate:latest
 | Variable                  | Default                            | Description                  |
 | ------------------------- | ---------------------------------- | ---------------------------- |
 | `PORT`                    | `8080`                             | Listening Port               |
-| `CAPTCHA_PROVIDER`        | `none \| turnstile \| recaptcha`   | Choose Captcha Provider      |
-| `RECAPTCHA_SECRET`        | —                                  | reCaptcha Site Secret        |
 | `TURNSTILE_SECRET`        | —                                  | Turnstile Site Secret        |
 | `AUTH_SIGNED_RS256_KEY`   | —                                  | RS256 Public Key (`kid:PEM`) |
 | `AUTH_SIGNED_MAX_SKEW`    | `300`                              | Allowed Clock Skew (seconds) |
 | `AUTH_SIGNED_MAX_TTL`     | `600`                              | Max Token Lifetime (seconds) |
+| `SESSION_SIGNING_SECRET`  | `TURNSTILE_SECRET`                 | HMAC Secret for Stateless Session Cookie |
 | `SESSION_TTL_SECONDS`     | `300`                              | Session Lifetime (seconds)   |
-| `SESSION_COOKIE_NAME`     | `__Host-fxrate-sess` <sup>\*</sup> | Name of the Session Cookie   |
-| `SESSION_COOKIE_DOMAIN`   | —                                  | Cookie Domain Attribute      |
-| `SESSION_COOKIE_SAMESITE` | `None \| Lax \| Strict`            | Cookie SameSite Attribute    |
-| `SESSION_COOKIE_SECURE`   | `1 \| 0`                           | Set Cookie as Secure         |
 | `CORS_ORIGIN`             | `*`                                | Allowed CORS Origin          |
 
-- Default naming rules:  
-  `SESSION_COOKIE_SECURE=1` only → `__Host-fxrate-sess`;  
-  `SESSION_COOKIE_SECURE=1` with `SESSION_COOKIE_DOMAIN` → `__Secure-fxrate-sess`;  
-  any other setup (including `SESSION_COOKIE_SECURE=0`) → `fxrate_sess`.  
-  Providing `SESSION_COOKIE_NAME` always overrides these defaults.
-- Please disable `SESSION_COOKIE_SECURE` when using HTTP in development environments.
+- Turnstile protection is enabled automatically when `TURNSTILE_SECRET` is set; leaving it empty disables captcha checks.
+- Session cookies are stateless and HMAC-signed, so the server does not keep session state in memory. Set `SESSION_SIGNING_SECRET` explicitly if you use `/api/signed` without `TURNSTILE_SECRET`.
 
 ## Usage
 

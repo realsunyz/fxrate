@@ -6,61 +6,99 @@ type SessionData = { exp: number; data?: any };
 export const SESSION_TTL_SECONDS = Number(
     process.env.SESSION_TTL_SECONDS ?? 300,
 );
-export const SESSION_COOKIE_DOMAIN =
-    process.env.SESSION_COOKIE_DOMAIN || undefined;
-export const SESSION_COOKIE_SAMESITE = (process.env.SESSION_COOKIE_SAMESITE ??
-    'None') as 'None' | 'Lax' | 'Strict';
-export const SESSION_COOKIE_SECURE: boolean = (() => {
-    const v = process.env.SESSION_COOKIE_SECURE;
-    if (v == null) return process.env.NODE_ENV === 'production';
-    return !/^(0|false|no|off)$/i.test(String(v));
-})();
-const DEFAULT_SESSION_COOKIE_NAME = SESSION_COOKIE_SECURE
-    ? SESSION_COOKIE_DOMAIN
-        ? '__Secure-fxrate-sess'
-        : '__Host-fxrate-sess'
-    : 'fxrate_sess';
-export const SESSION_COOKIE_NAME = String(
-    process.env.SESSION_COOKIE_NAME ?? DEFAULT_SESSION_COOKIE_NAME,
-);
+export const SESSION_COOKIE_NAME = 'fxrate_session';
+const TURNSTILE_SECRET = (process.env.TURNSTILE_SECRET || '').trim();
+const SESSION_SIGNING_SECRET = (
+    process.env.SESSION_SIGNING_SECRET ||
+    TURNSTILE_SECRET ||
+    ''
+).trim();
+export const CAPTCHA_ENABLED = Boolean(TURNSTILE_SECRET);
 
-const sessionStore = new Map<string, SessionData>();
+const base64UrlEncode = (input: string): string =>
+    Buffer.from(input, 'utf8').toString('base64url');
 
-type CaptchaProvider = 'turnstile' | 'recaptcha' | 'none';
+const base64UrlDecode = (input: string): string => {
+    const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = (4 - (normalized.length % 4)) % 4;
+    return Buffer.from(normalized + '='.repeat(pad), 'base64').toString(
+        'utf8',
+    );
+};
 
-const resolveCaptchaProvider = (): CaptchaProvider => {
-    const envValue = process.env.CAPTCHA_PROVIDER;
-    const raw = envValue ? envValue.trim().toLowerCase() : undefined;
-    switch (raw) {
-        case 'turnstile':
-            return 'turnstile';
-        case 'recaptcha':
-            return 'recaptcha';
-        case 'none':
-        case undefined:
-        case '':
-            return 'none';
-        default:
-            return 'none';
+const signValue = (value: string): string =>
+    crypto
+        .createHmac('sha256', SESSION_SIGNING_SECRET)
+        .update(value)
+        .digest('base64url');
+
+const parseSessionToken = (token: string): SessionData | null => {
+    const dotIndex = token.lastIndexOf('.');
+    if (dotIndex <= 0) return null;
+
+    const payloadPart = token.slice(0, dotIndex);
+    const signaturePart = token.slice(dotIndex + 1);
+    if (!payloadPart || !signaturePart) return null;
+
+    const expectedSignature = signValue(payloadPart);
+    const actual = Buffer.from(signaturePart, 'utf8');
+    const expected = Buffer.from(expectedSignature, 'utf8');
+    if (
+        actual.length !== expected.length ||
+        !crypto.timingSafeEqual(actual, expected)
+    ) {
+        return null;
+    }
+
+    try {
+        const parsed = JSON.parse(base64UrlDecode(payloadPart)) as SessionData;
+        if (
+            !parsed ||
+            typeof parsed !== 'object' ||
+            !Number.isFinite(parsed.exp)
+        ) {
+            return null;
+        }
+        return parsed;
+    } catch (_e) {
+        return null;
     }
 };
 
-export const CAPTCHA_PROVIDER: CaptchaProvider = resolveCaptchaProvider();
-export const CAPTCHA_ENABLED = CAPTCHA_PROVIDER !== 'none';
-export const TURNSTILE_ENABLED = CAPTCHA_PROVIDER === 'turnstile';
-export const RECAPTCHA_ENABLED = CAPTCHA_PROVIDER === 'recaptcha';
+const createSessionToken = (data?: any): { id: string; exp: number } => {
+    if (!SESSION_SIGNING_SECRET) {
+        throw new Error('missing_session_signing_secret');
+    }
+
+    const exp = Date.now() + SESSION_TTL_SECONDS * 1000;
+    const payload: SessionData = { exp, data };
+    const payloadPart = base64UrlEncode(JSON.stringify(payload));
+    const signaturePart = signValue(payloadPart);
+    return { id: `${payloadPart}.${signaturePart}`, exp };
+};
+
+const buildCookieValue = (value: string, maxAge: number): string => {
+    return [
+        `${SESSION_COOKIE_NAME}=${encodeURIComponent(value)}`,
+        `Max-Age=${maxAge}`,
+        'HttpOnly',
+        'Path=/',
+    ].join('; ');
+};
 
 export const getSessionWithReason = (
     id?: string | null,
 ): {
     session: SessionData | null;
-    reason?: 'expired' | 'missing';
+    reason?: 'expired' | 'missing' | 'invalid' | 'misconfigured';
 } => {
     if (!id) return { session: null, reason: 'missing' };
-    const s = sessionStore.get(id);
-    if (!s) return { session: null, reason: 'missing' };
+    if (!SESSION_SIGNING_SECRET) {
+        return { session: null, reason: 'misconfigured' };
+    }
+    const s = parseSessionToken(id);
+    if (!s) return { session: null, reason: 'invalid' };
     if (s.exp <= Date.now()) {
-        sessionStore.delete(id);
         return { session: null, reason: 'expired' };
     }
     return { session: s };
@@ -80,10 +118,10 @@ export const parseCookies = (
 };
 
 export const createSession = (data?: any) => {
-    const id = crypto.randomBytes(32).toString('base64url');
-    const exp = Date.now() + SESSION_TTL_SECONDS * 1000;
-    sessionStore.set(id, { exp, data });
-    return { id, exp };
+    return createSessionToken(data);
 };
 
-export type { CaptchaProvider };
+export const createSessionCookie = (id: string): string =>
+    buildCookieValue(id, SESSION_TTL_SECONDS);
+
+export const createExpiredSessionCookie = (): string => buildCookieValue('', 0);

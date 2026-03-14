@@ -4,12 +4,8 @@ import process from 'node:process';
 import { handler } from 'handlers.js';
 
 import {
-    SESSION_COOKIE_DOMAIN,
-    SESSION_COOKIE_NAME,
-    SESSION_COOKIE_SAMESITE,
-    SESSION_COOKIE_SECURE,
-    SESSION_TTL_SECONDS,
     createSession,
+    createSessionCookie,
 } from './session';
 
 const ENV_KEY_LIST = process.env.AUTH_SIGNED_RS256_KEYS;
@@ -220,17 +216,16 @@ const extractToken = (request: any): string => {
     return '';
 };
 
-const createCookie = (id: string) => {
-    const attrs = [
-        `${SESSION_COOKIE_NAME}=${encodeURIComponent(id)}`,
-        `Max-Age=${SESSION_TTL_SECONDS}`,
-        'HttpOnly',
-        `SameSite=${SESSION_COOKIE_SAMESITE}`,
-        'Path=/',
-    ];
-    if (SESSION_COOKIE_SECURE) attrs.push('Secure');
-    if (SESSION_COOKIE_DOMAIN) attrs.push(`Domain=${SESSION_COOKIE_DOMAIN}`);
-    return attrs.join('; ');
+const toSessionData = (payload: Record<string, unknown>) => {
+    const data: Record<string, unknown> = {};
+
+    if (typeof payload['sub'] === 'string') data.sub = payload['sub'];
+    if (typeof payload['iss'] === 'string') data.iss = payload['iss'];
+    if (typeof payload['aud'] === 'string' || Array.isArray(payload['aud'])) {
+        data.aud = payload['aud'];
+    }
+
+    return data;
 };
 
 const createSignedApiHandler = () =>
@@ -259,15 +254,23 @@ const createSignedApiHandler = () =>
                 return response;
             }
 
-            const { id, exp } = createSession({
-                provider: 'api-signed',
-                payload: result.payload,
-            });
-            response.headers.set('Set-Cookie', createCookie(id));
+            let session;
+            try {
+                session = createSession(toSessionData(result.payload));
+            } catch (_e) {
+                response.status = 500;
+                response.body = JSON.stringify({
+                    success: false,
+                    error: 'server_misconfigured',
+                    details: 'missing_session_signing_secret',
+                });
+                return response;
+            }
+            response.headers.set('Set-Cookie', createSessionCookie(session.id));
             response.status = 200;
             response.body = JSON.stringify({
                 success: true,
-                expiresAt: new Date(exp).toISOString(),
+                expiresAt: new Date(session.exp).toISOString(),
             });
             return response;
         },
